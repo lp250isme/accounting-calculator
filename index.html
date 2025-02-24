@@ -23,7 +23,7 @@
             user-select: none;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
         }
         h1 {
@@ -72,16 +72,42 @@
             border-radius: 10px;
             font-size: 17px;
             font-weight: 500;
+            cursor: pointer;
             width: 100%;
             text-align: center;
             -webkit-tap-highlight-color: transparent;
+            margin-bottom: 10px;
+            transition: background 0.2s;
+        }
+        button:hover:not(:active) {
+            background: #005ecb;
         }
         button:active {
             background: #005ecb;
         }
+        .action-btn {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            font-size: 20px;
+            line-height: 28px;
+            background: transparent;
+            color: #ff3b30;
+            border-radius: 50%;
+            margin-left: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .action-btn:hover:not(:active) {
+            background: rgba(255, 59, 48, 0.1);
+        }
+        .action-btn:active {
+            background: rgba(255, 59, 48, 0.2);
+        }
         .checkbox-group {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 12px;
             margin-bottom: 12px;
         }
@@ -101,6 +127,9 @@
             border-radius: 8px;
             margin: 6px 0;
             font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         #result .entry {
             background: #e5f0ff;
@@ -155,8 +184,20 @@
             button {
                 background: #0a84ff;
             }
+            button:hover:not(:active) {
+                background: #0066cc;
+            }
             button:active {
                 background: #0066cc;
+            }
+            .action-btn {
+                color: #ff453a;
+            }
+            .action-btn:hover:not(:active) {
+                background: rgba(255, 69, 58, 0.1);
+            }
+            .action-btn:active {
+                background: rgba(255, 69, 58, 0.2);
             }
             .entry {
                 background: #3c3c3e;
@@ -164,6 +205,30 @@
             }
             #result .entry {
                 background: #003087;
+            }
+        }
+
+        /* Desktop Adjustments */
+        @media (min-width: 601px) {
+            h1 {
+                font-size: 32px;
+            }
+            h2 {
+                font-size: 22px;
+            }
+            .input-group {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+            input[type="text"], input[type="number"], select {
+                flex: 1;
+                min-width: 200px;
+            }
+            button {
+                padding: 12px 20px;
+                width: auto;
+                min-width: 150px;
             }
         }
 
@@ -195,6 +260,9 @@
             .entry {
                 font-size: 14px;
             }
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -206,7 +274,7 @@
         <div class="section">
             <h2>設定參與者</h2>
             <div class="input-group">
-                <input type="text" id="participantName" placeholder="輸入姓名">
+                <input type="text" id="participantName" placeholder="輸入姓名" onkeypress="if (event.key === 'Enter' && !event.isComposing) addParticipant()">
                 <button onclick="addParticipant()">新增參與者</button>
             </div>
             <div id="participantsList" class="list"></div>
@@ -216,11 +284,11 @@
         <div class="section">
             <h2>新增付款</h2>
             <div class="input-group">
-                <input type="text" id="paymentTitle" placeholder="標題（選填）">
-                <select id="payer">
+                <input type="text" id="paymentTitle" placeholder="標題（選填）" onkeypress="if (event.key === 'Enter' && !event.isComposing) document.getElementById('payer').focus()">
+                <select id="payer" onchange="if (this.value) document.getElementById('amount').focus()">
                     <option value="">選擇付款人</option>
                 </select>
-                <input type="number" id="amount" placeholder="輸入金額" min="0" step="0.01">
+                <input type="number" id="amount" placeholder="輸入金額" min="0" step="0.01" onkeypress="if (event.key === 'Enter' && !event.isComposing) addPayment()">
             </div>
             <label>分擔人:</label>
             <div id="splitAmong" class="checkbox-group"></div>
@@ -232,6 +300,7 @@
         <div class="section">
             <h2>結算結果</h2>
             <button onclick="calculateSettlement()">計算結算</button>
+            <button onclick="exportToCSV()">匯出 CSV</button>
             <div id="result" class="list"></div>
         </div>
     </div>
@@ -253,6 +322,18 @@
                 this.updateUI();
             }
 
+            removeParticipant(index) {
+                const name = this.participants[index];
+                if (this.paymentRecords.some(record => record.payer === name || record.splitAmong.includes(name))) {
+                    alert('此參與者已涉及付款紀錄，無法刪除');
+                    return;
+                }
+                this.participants.splice(index, 1);
+                this.payments.delete(name);
+                this.debts.delete(name);
+                this.updateUI();
+            }
+
             addPayment(payer, amount, splitAmong, title = '') {
                 amount = parseFloat(amount);
                 this.payments.set(payer, this.payments.get(payer) + amount);
@@ -263,6 +344,20 @@
                     }
                 });
                 this.paymentRecords.push({ payer, amount, splitAmong: [...splitAmong], title });
+                this.updateUI();
+            }
+
+            removePayment(index) {
+                const record = this.paymentRecords[index];
+                const amount = parseFloat(record.amount);
+                this.payments.set(record.payer, this.payments.get(record.payer) - amount);
+                const share = amount / record.splitAmong.length;
+                record.splitAmong.forEach(person => {
+                    if (person !== record.payer) {
+                        this.debts.set(person, this.debts.get(person) - share);
+                    }
+                });
+                this.paymentRecords.splice(index, 1);
                 this.updateUI();
             }
 
@@ -288,7 +383,7 @@
                     const amount = Math.min(-debt, credit);
 
                     if (amount > 0) {
-                        settlements.push(`${debtor} 應付 ${creditor} ${amount.toFixed(2)} 元`);
+                        settlements.push({ debtor, creditor, amount });
                     }
 
                     debtors[i][1] += amount;
@@ -303,7 +398,9 @@
 
             updateUI() {
                 const participantsList = document.getElementById('participantsList');
-                participantsList.innerHTML = this.participants.map(p => `<div class="entry">${p}</div>`).join('');
+                participantsList.innerHTML = this.participants.map((p, i) => 
+                    `<div class="entry">${p}<button class="action-btn" onclick="bill.removeParticipant(${i})">✕</button></div>`
+                ).join('');
 
                 const payerSelect = document.getElementById('payer');
                 payerSelect.innerHTML = `<option value="">選擇付款人</option>` + 
@@ -315,9 +412,37 @@
                 ).join('');
 
                 const paymentsList = document.getElementById('paymentsList');
-                paymentsList.innerHTML = this.paymentRecords.map(record => 
-                    `<div class="entry">${record.title ? `[${record.title}] ` : ''}${record.payer} 付了 ${record.amount} 元，分擔人：${record.splitAmong.join(', ')}</div>`
+                paymentsList.innerHTML = this.paymentRecords.map((record, i) => 
+                    `<div class="entry">${record.title ? `[${record.title}] ` : ''}${record.payer} 付了 ${record.amount} 元，分擔人：${record.splitAmong.join(', ')}
+                        <button class="action-btn" onclick="bill.removePayment(${i})">✕</button>
+                    </div>`
                 ).join('');
+            }
+
+            exportToCSV() {
+                const settlements = this.calculateSettlement();
+                let csvContent = "\ufeff";
+
+                csvContent += "付款紀錄\n";
+                csvContent += "標題,付款人,金額,分擔人\n";
+                this.paymentRecords.forEach(record => {
+                    csvContent += `"${record.title || ''}","${record.payer}","${record.amount}","${record.splitAmong.join(';')}"\n`;
+                });
+
+                csvContent += "\n結算結果\n";
+                csvContent += "應付人,收款人,金額\n";
+                settlements.forEach(s => {
+                    csvContent += `"${s.debtor}","${s.creditor}","${s.amount.toFixed(2)}"\n`;
+                });
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `分帳結果_${new Date().toISOString().slice(0,10)}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
         }
 
@@ -328,6 +453,7 @@
             if (name) {
                 bill.addParticipant(name);
                 document.getElementById('participantName').value = '';
+                document.getElementById('participantName').focus();
             }
         }
 
@@ -347,12 +473,19 @@
             document.getElementById('paymentTitle').value = '';
             document.getElementById('amount').value = '';
             document.getElementById('payer').value = '';
+            document.getElementById('paymentTitle').focus();
         }
 
         function calculateSettlement() {
             const settlements = bill.calculateSettlement();
             const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = settlements.map(s => `<div class="entry">${s}</div>`).join('');
+            resultDiv.innerHTML = settlements.map(s => 
+                `<div class="entry">${s.debtor} 應付 ${s.creditor} ${s.amount.toFixed(2)} 元</div>`
+            ).join('');
+        }
+
+        function exportToCSV() {
+            bill.exportToCSV();
         }
     </script>
 </body>
