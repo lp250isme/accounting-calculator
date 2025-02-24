@@ -446,11 +446,18 @@
             }
 
             updateSplitTitle(title) {
-                this.splitTitle = title;
-                if (this.splitId) {
-                    this.saveCurrentRecord();
-                }
-                this.updateUI();
+              this.splitTitle = title;
+              // 如果目前沒有分帳 ID，但有輸入標題，則自動創建新的分帳
+              if (!this.splitId && title.trim()) {
+                  this.splitId = Date.now().toString();
+                  this.participants = [];
+                  this.payments.clear();
+                  this.debts.clear();
+                  this.paymentRecords = [];
+                  this.sectionsCollapsed = { participants: false, savedRecords: false };
+              }
+              this.saveCurrentRecord(); // 儲存到 localStorage
+              this.updateUI();
             }
 
             createNewSplit() {
@@ -465,7 +472,7 @@
                 this.payments.clear();
                 this.debts.clear();
                 this.paymentRecords = [];
-                this.sectionsCollapsed = { participants: false, savedRecords: false }; // 重置收合狀態
+                this.sectionsCollapsed = { participants: false, savedRecords: false };
                 this.updateUI();
                 document.getElementById('splitTitle').value = '';
             }
@@ -556,7 +563,7 @@
                     });
                 });
                 this.updateUI();
-                document.getElementById('result').innerHTML = ''; // 清空結算結果
+                document.getElementById('result').innerHTML = '';
             }
 
             removeRecord(index) {
