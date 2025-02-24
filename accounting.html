@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>分帳計算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', Arial, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            padding-top: 10px;
+        }
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        input[type="text"], input[type="number"], select {
+            padding: 12px;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            font-size: 17px;
+            background: #fff;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #007aff;
+        }
+        button {
+            padding: 14px;
+            background: #007aff;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 500;
+            width: 100%;
+            text-align: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button:active {
+            background: #005ecb;
+        }
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 17px;
+            padding: 8px 0;
+        }
+        .list {
+            margin-top: 12px;
+        }
+        .entry {
+            padding: 10px 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin: 6px 0;
+            font-size: 15px;
+        }
+        #result .entry {
+            background: #e5f0ff;
+        }
+
+        /* Light Mode */
+        @media (prefers-color-scheme: light) {
+            body {
+                background: #f5f5f7;
+                color: #1d1d1f;
+            }
+            h1, h2, .checkbox-group label {
+                color: #1d1d1f;
+            }
+            .section {
+                background: rgba(255, 255, 255, 0.95);
+            }
+            input[type="text"], input[type="number"], select {
+                background: #fff;
+                color: #1d1d1f;
+                border-color: #d2d2d7;
+            }
+            .entry {
+                background: #f5f5f5;
+                color: #1d1d1f;
+            }
+            #result .entry {
+                background: #e5f0ff;
+            }
+        }
+
+        /* Dark Mode */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #1c1c1e;
+                color: #f5f5f5;
+            }
+            h1, h2, .checkbox-group label {
+                color: #f5f5f5;
+            }
+            .section {
+                background: rgba(44, 44, 46, 0.95);
+            }
+            input[type="text"], input[type="number"], select {
+                background: #2c2c2e;
+                color: #f5f5f5;
+                border-color: #3c3c3e;
+            }
+            input:focus, select:focus {
+                border-color: #0a84ff;
+            }
+            button {
+                background: #0a84ff;
+            }
+            button:active {
+                background: #0066cc;
+            }
+            .entry {
+                background: #3c3c3e;
+                color: #f5f5f5;
+            }
+            #result .entry {
+                background: #003087;
+            }
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+                padding-top: calc(15px + env(safe-area-inset-top));
+                padding-bottom: calc(15px + env(safe-area-inset-bottom));
+            }
+            h1 {
+                font-size: 24px;
+            }
+            h2 {
+                font-size: 18px;
+            }
+            .section {
+                padding: 12px;
+                border-radius: 14px;
+            }
+            input[type="text"], input[type="number"], select {
+                padding: 10px;
+                font-size: 16px;
+            }
+            button {
+                padding: 12px;
+                font-size: 16px;
+            }
+            .entry {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>分帳計算器</h1>
+
+        <!-- 參與者設定 -->
+        <div class="section">
+            <h2>設定參與者</h2>
+            <div class="input-group">
+                <input type="text" id="participantName" placeholder="輸入姓名">
+                <button onclick="addParticipant()">新增參與者</button>
+            </div>
+            <div id="participantsList" class="list"></div>
+        </div>
+
+        <!-- 付款記錄 -->
+        <div class="section">
+            <h2>新增付款</h2>
+            <div class="input-group">
+                <input type="text" id="paymentTitle" placeholder="標題（選填）">
+                <select id="payer">
+                    <option value="">選擇付款人</option>
+                </select>
+                <input type="number" id="amount" placeholder="輸入金額" min="0" step="0.01">
+            </div>
+            <label>分擔人:</label>
+            <div id="splitAmong" class="checkbox-group"></div>
+            <button onclick="addPayment()">新增付款</button>
+            <div id="paymentsList" class="list"></div>
+        </div>
+
+        <!-- 結算 -->
+        <div class="section">
+            <h2>結算結果</h2>
+            <button onclick="calculateSettlement()">計算結算</button>
+            <div id="result" class="list"></div>
+        </div>
+    </div>
+
+    <script>
+        class SplitBill {
+            constructor() {
+                this.participants = [];
+                this.payments = new Map();
+                this.debts = new Map();
+                this.paymentRecords = [];
+            }
+
+            addParticipant(name) {
+                if (!name || this.participants.includes(name)) return;
+                this.participants.push(name);
+                this.payments.set(name, 0);
+                this.debts.set(name, 0);
+                this.updateUI();
+            }
+
+            addPayment(payer, amount, splitAmong, title = '') {
+                amount = parseFloat(amount);
+                this.payments.set(payer, this.payments.get(payer) + amount);
+                const share = amount / splitAmong.length;
+                splitAmong.forEach(person => {
+                    if (person !== payer) {
+                        this.debts.set(person, this.debts.get(person) + share);
+                    }
+                });
+                this.paymentRecords.push({ payer, amount, splitAmong: [...splitAmong], title });
+                this.updateUI();
+            }
+
+            calculateSettlement() {
+                const result = new Map();
+                this.participants.forEach(person => {
+                    const net = this.payments.get(person) - this.debts.get(person);
+                    result.set(person, net);
+                });
+
+                const settlements = [];
+                const debtors = [...result.entries()]
+                    .filter(([_, amount]) => amount < 0)
+                    .sort((a, b) => a[1] - b[1]);
+                const creditors = [...result.entries()]
+                    .filter(([_, amount]) => amount > 0)
+                    .sort((a, b) => b[1] - a[1]);
+
+                let i = 0, j = 0;
+                while (i < debtors.length && j < creditors.length) {
+                    const [debtor, debt] = debtors[i];
+                    const [creditor, credit] = creditors[j];
+                    const amount = Math.min(-debt, credit);
+
+                    if (amount > 0) {
+                        settlements.push(`${debtor} 應付 ${creditor} ${amount.toFixed(2)} 元`);
+                    }
+
+                    debtors[i][1] += amount;
+                    creditors[j][1] -= amount;
+
+                    if (Math.abs(debtors[i][1]) < 0.01) i++;
+                    if (Math.abs(creditors[j][1]) < 0.01) j++;
+                }
+
+                return settlements;
+            }
+
+            updateUI() {
+                const participantsList = document.getElementById('participantsList');
+                participantsList.innerHTML = this.participants.map(p => `<div class="entry">${p}</div>`).join('');
+
+                const payerSelect = document.getElementById('payer');
+                payerSelect.innerHTML = `<option value="">選擇付款人</option>` + 
+                    this.participants.map(p => `<option value="${p}">${p}</option>`).join('');
+
+                const splitAmongDiv = document.getElementById('splitAmong');
+                splitAmongDiv.innerHTML = this.participants.map(p => 
+                    `<label><input type="checkbox" name="splitAmong" value="${p}" checked> ${p}</label>`
+                ).join('');
+
+                const paymentsList = document.getElementById('paymentsList');
+                paymentsList.innerHTML = this.paymentRecords.map(record => 
+                    `<div class="entry">${record.title ? `[${record.title}] ` : ''}${record.payer} 付了 ${record.amount} 元，分擔人：${record.splitAmong.join(', ')}</div>`
+                ).join('');
+            }
+        }
+
+        const bill = new SplitBill();
+
+        function addParticipant() {
+            const name = document.getElementById('participantName').value.trim();
+            if (name) {
+                bill.addParticipant(name);
+                document.getElementById('participantName').value = '';
+            }
+        }
+
+        function addPayment() {
+            const title = document.getElementById('paymentTitle').value.trim();
+            const payer = document.getElementById('payer').value;
+            const amount = document.getElementById('amount').value;
+            const splitAmong = Array.from(document.querySelectorAll('input[name="splitAmong"]:checked'))
+                .map(cb => cb.value);
+            
+            if (!payer || !amount || splitAmong.length === 0) {
+                alert('請選擇付款人、輸入金額並至少選擇一位分擔人');
+                return;
+            }
+
+            bill.addPayment(payer, amount, splitAmong, title);
+            document.getElementById('paymentTitle').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('payer').value = '';
+        }
+
+        function calculateSettlement() {
+            const settlements = bill.calculateSettlement();
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = settlements.map(s => `<div class="entry">${s}</div>`).join('');
+        }
+    </script>
+</body>
+</html>
