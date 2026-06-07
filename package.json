@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "liquid-glass-kit": "github:lp250isme/liquid-glass-kit#e3f4e4a91e74475b750fe7545ffc0e563e2570fd",
-    "more-by-kv": "github:lp250isme/more-by-kv#33ef8f3c304a45d42c52ea9b0adf831161f7349d",
+    "more-by-kv": "github:lp250isme/more-by-kv#d845d47b9b17d96d2c47b111342029a3e138b2f5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
