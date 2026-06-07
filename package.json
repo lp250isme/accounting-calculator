@@ -1,0 +1,21 @@
+{
+  "name": "accounting-calculator",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "liquid-glass-kit": "github:lp250isme/liquid-glass-kit#e3f4e4a91e74475b750fe7545ffc0e563e2570fd",
+    "more-by-kv": "github:lp250isme/more-by-kv#cf1cf4dac5d5dd1401df9aa13be7eee9f109faeb",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.0"
+  }
+}

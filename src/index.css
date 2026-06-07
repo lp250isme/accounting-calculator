@@ -1,0 +1,555 @@
+/* ============================================================
+   accounting-calculator — app 層樣式
+   玻璃材質（.glass / .glass-panel / .glass-chip / .liquid-glass）
+   來自 liquid-glass-kit；互推卡片樣式來自 more-by-kv。
+   主題：useTheme 把解析後的 light/dark 寫到 <html data-theme>，
+   kit 的深色 token 因此自動啟動，這裡只管 app 自己的 token。
+   ============================================================ */
+
+/* ---------- design tokens ---------- */
+:root {
+    --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "SF Pro Display", "Segoe UI", system-ui, Roboto, "Helvetica Neue",
+        Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+        monospace;
+
+    --label: #000000;
+    --label-2: rgba(60, 60, 67, 0.6);
+    --label-3: rgba(60, 60, 67, 0.3);
+
+    --bg: #f2f2f7;
+    --tint: #007aff;
+    --green: #34c759;
+    --red: #ff3b30;
+    --fill: rgba(118, 118, 128, 0.12);
+
+    /* GTC mesh gradient 背景 */
+    --mesh: radial-gradient(
+            at 0% 0%,
+            hsla(210, 100%, 90%, 0.8) 0,
+            transparent 50%
+        ),
+        radial-gradient(at 100% 0%, hsla(150, 75%, 86%, 0.55) 0, transparent 50%),
+        radial-gradient(at 50% 100%, hsla(252, 75%, 90%, 0.6) 0, transparent 50%);
+
+    color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+    --label: #ffffff;
+    --label-2: rgba(235, 235, 245, 0.6);
+    --label-3: rgba(235, 235, 245, 0.3);
+
+    --bg: #000000;
+    --tint: #0a84ff;
+    --green: #30d158;
+    --red: #ff453a;
+    --fill: rgba(118, 118, 128, 0.24);
+
+    --mesh: radial-gradient(
+            at 0% 0%,
+            hsla(220, 40%, 20%, 0.8) 0,
+            transparent 60%
+        ),
+        radial-gradient(at 100% 0%, hsla(160, 40%, 18%, 0.55) 0, transparent 50%),
+        radial-gradient(at 50% 100%, hsla(252, 40%, 22%, 0.5) 0, transparent 50%);
+
+    color-scheme: dark;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+}
+
+body {
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    color: var(--label);
+    overscroll-behavior: none;
+
+    /* 動態 mesh gradient（GTC 同款） */
+    background-color: var(--bg);
+    background-image: var(--mesh);
+    background-size: 150% 150%;
+    background-attachment: fixed;
+    animation: gradientBG 20s ease infinite alternate;
+    padding-bottom: env(safe-area-inset-bottom);
+    transition: background-color 0.3s ease;
+}
+
+@keyframes gradientBG {
+    0% {
+        background-position: 0% 0%;
+    }
+    100% {
+        background-position: 100% 100%;
+    }
+}
+
+/* ---------- 版面 ---------- */
+.page {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 20px 20px 40px;
+    padding-top: calc(20px + env(safe-area-inset-top));
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+}
+.topbar img {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    user-select: none;
+}
+
+.icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 9999px;
+    padding: 0;
+    color: var(--label);
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.icon-btn:active {
+    transform: scale(0.92);
+}
+.icon-btn svg {
+    width: 19px;
+    height: 19px;
+}
+
+/* ---------- hero ---------- */
+.hero h1 {
+    margin: 0 0 10px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+.hero p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--label-2);
+}
+
+/* ---------- 卡片堆疊 ---------- */
+.card-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 24px;
+}
+
+/* 標題輸入卡（kit 的 LiquidGlass host） */
+.title-card {
+    overflow: hidden;
+}
+.title-card:focus-within {
+    outline: 2px solid color-mix(in srgb, var(--tint) 45%, transparent);
+    outline-offset: 2px;
+}
+.title-card input {
+    display: block;
+    width: 100%;
+    padding: 17px 20px;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: var(--font-ui);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--label);
+}
+.title-card input::placeholder {
+    color: var(--label-3);
+    font-weight: 500;
+}
+
+/* ---------- 區塊卡 ---------- */
+.section-card {
+    border-radius: 28px;
+    padding: 16px 20px 18px;
+}
+
+.section-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0 0 12px;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: var(--font-ui);
+    text-align: left;
+    color: var(--label);
+    cursor: pointer;
+}
+.section-head.static {
+    cursor: default;
+}
+.section-title {
+    flex: 1;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+.section-meta {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--label-2);
+}
+.chevron {
+    width: 16px;
+    height: 16px;
+    color: var(--label-3);
+    transform: rotate(-90deg);
+    transition: transform 0.2s ease;
+}
+.chevron.open {
+    transform: rotate(0deg);
+}
+
+.collapsed-summary {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--label-2);
+}
+
+.hint {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--label-3);
+}
+
+/* ---------- 表單 ---------- */
+.field-row {
+    display: flex;
+    gap: 8px;
+}
+.field-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.field {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 14px;
+    background: var(--fill);
+    font-family: var(--font-ui);
+    font-size: 16px;
+    color: var(--label);
+    -webkit-appearance: none;
+    appearance: none;
+    transition: box-shadow 0.15s ease;
+}
+.field:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--tint) 45%, transparent);
+}
+.field::placeholder {
+    color: var(--label-3);
+}
+select.field {
+    /* 自繪下拉箭頭 */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+}
+select.field:invalid,
+select.field option[value=""] {
+    color: var(--label-3);
+}
+/* 數字輸入不顯示上下箭頭 */
+.field::-webkit-outer-spin-button,
+.field::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"].field {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* ---------- 按鈕 ---------- */
+.pill-btn {
+    border: none;
+    border-radius: 9999px;
+    min-height: 36px;
+    padding: 0 16px;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--tint);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, opacity 0.2s ease,
+        transform 0.15s ease;
+}
+.pill-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+.pill-btn:not(:disabled):active {
+    transform: scale(0.96);
+}
+.pill-btn.new-split {
+    margin-bottom: 12px;
+}
+
+.primary-btn {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 14px;
+    border: none;
+    border-radius: 16px;
+    background: var(--tint);
+    font-family: var(--font-ui);
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--tint) 35%, transparent);
+    transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.primary-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+    box-shadow: none;
+}
+.primary-btn:not(:disabled):active {
+    transform: scale(0.985);
+}
+
+/* ---------- 參與者 / 分擔人 chips ---------- */
+.people {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.person {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 9999px;
+    min-height: 36px;
+    padding: 0 8px 0 15px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--label);
+}
+
+.person-toggle {
+    border: none;
+    border-radius: 9999px;
+    min-height: 36px;
+    padding: 0 16px;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--label-2);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease,
+        box-shadow 0.15s ease, transform 0.15s ease;
+}
+.person-toggle:active {
+    transform: scale(0.96);
+}
+/* 選中 = tint 填色（蓋過玻璃材質） */
+.person-toggle.on {
+    background: var(--tint);
+    color: #ffffff;
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--tint) 35%, transparent);
+}
+
+.split-among {
+    margin-top: 2px;
+}
+.split-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--label-2);
+}
+.split-among .people {
+    margin-top: 8px;
+}
+
+/* ---------- 清單項 ---------- */
+.entries {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 8px 11px 14px;
+    border-radius: 14px;
+    background: var(--fill);
+    font-size: 14px;
+    line-height: 1.45;
+}
+.entry-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.entry-text b {
+    font-weight: 650;
+}
+.entry-sub {
+    font-size: 12.5px;
+    color: var(--label-2);
+}
+.entry-tag {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 1px 8px;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--tint) 14%, transparent);
+    color: var(--tint);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* 結算列 */
+.entry.settle {
+    padding-right: 14px;
+    background: color-mix(in srgb, var(--green) 12%, transparent);
+}
+.settle-names {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.settle-names svg {
+    width: 14px;
+    height: 14px;
+    color: var(--label-3);
+}
+.settle-amount {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--green);
+    white-space: nowrap;
+}
+
+/* 已儲存分帳列 */
+.entry.record {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+.entry.record.current {
+    box-shadow: inset 0 0 0 1.5px
+        color-mix(in srgb, var(--tint) 55%, transparent);
+}
+
+/* 刪除小圓鈕 */
+.x-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 9999px;
+    padding: 0;
+    background: transparent;
+    color: var(--label-3);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.x-btn:hover,
+.x-btn:active {
+    background: color-mix(in srgb, var(--red) 12%, transparent);
+    color: var(--red);
+}
+.x-btn svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* ---------- 其他作品 / footer ---------- */
+.more-by {
+    margin-top: 28px;
+}
+
+footer {
+    margin-top: 36px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--label-3);
+}
+footer a {
+    color: var(--label-2);
+    text-decoration: none;
+}
+footer a:hover {
+    color: var(--tint);
+}
+
+/* ---------- 進場動畫 ---------- */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+/* 不用 fill/delay：動畫沒跑（背景分頁）時內容仍可見 */
+.animate-fade-in {
+    animation: fade-in 0.25s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body {
+        animation: none;
+    }
+    .animate-fade-in {
+        animation: none;
+    }
+    * {
+        transition-duration: 0.01ms !important;
+    }
+}

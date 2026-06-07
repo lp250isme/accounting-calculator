@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head><style>body{margin:0;display:flex;background:transparent}</style></head>
+<body>
+<!-- LIGHT VARIANT -->
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="sqL"><rect x="16" y="16" width="480" height="480" rx="108"/></clipPath>
+    <radialGradient id="bgL1" cx="0.12" cy="0.1" r="0.9">
+      <stop offset="0%" stop-color="hsla(210,100%,86%,0.95)"/><stop offset="100%" stop-color="hsla(210,100%,86%,0)"/>
+    </radialGradient>
+    <radialGradient id="bgL2" cx="0.92" cy="0.15" r="0.8">
+      <stop offset="0%" stop-color="hsla(150,75%,78%,0.85)"/><stop offset="100%" stop-color="hsla(150,75%,78%,0)"/>
+    </radialGradient>
+    <radialGradient id="bgL3" cx="0.5" cy="1.05" r="0.9">
+      <stop offset="0%" stop-color="hsla(252,75%,86%,0.9)"/><stop offset="100%" stop-color="hsla(252,75%,86%,0)"/>
+    </radialGradient>
+    <linearGradient id="coinFillL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.60)"/><stop offset="55%" stop-color="rgba(255,255,255,0.20)"/><stop offset="100%" stop-color="rgba(255,255,255,0.34)"/>
+    </linearGradient>
+    <radialGradient id="coinGreenL" cx="0.5" cy="0.72" r="0.85">
+      <stop offset="0%" stop-color="rgba(52,199,89,0.30)"/><stop offset="75%" stop-color="rgba(52,199,89,0.08)"/><stop offset="100%" stop-color="rgba(52,199,89,0)"/>
+    </radialGradient>
+    <linearGradient id="rimL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.95)"/><stop offset="50%" stop-color="rgba(255,255,255,0.35)"/><stop offset="100%" stop-color="rgba(255,255,255,0.75)"/>
+    </linearGradient>
+    <linearGradient id="specL" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.95)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+    <linearGradient id="sqRimL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.9)"/><stop offset="100%" stop-color="rgba(255,255,255,0.3)"/>
+    </linearGradient>
+    <filter id="blurS" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="blurM" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="14"/></filter>
+  </defs>
+  <g clip-path="url(#sqL)">
+    <rect x="16" y="16" width="480" height="480" fill="#eef2f8"/>
+    <rect x="16" y="16" width="480" height="480" fill="url(#bgL1)"/>
+    <rect x="16" y="16" width="480" height="480" fill="url(#bgL2)"/>
+    <rect x="16" y="16" width="480" height="480" fill="url(#bgL3)"/>
+    <!-- drop shadow under coin -->
+    <ellipse cx="256" cy="418" rx="140" ry="20" fill="rgba(20,90,55,0.30)" filter="url(#blurM)"/>
+    <!-- glass coin -->
+    <g>
+      <circle cx="256" cy="256" r="150" fill="url(#coinFillL)"/>
+      <circle cx="256" cy="256" r="150" fill="url(#coinGreenL)"/>
+      <!-- inner bottom glow -->
+      <path d="M168 372 C 214 396, 298 396, 344 372" stroke="rgba(170,240,200,0.9)" stroke-width="10" fill="none" filter="url(#blurS)"/>
+      <!-- specular sweep -->
+      <ellipse cx="192" cy="162" rx="70" ry="26" fill="url(#specL)" transform="rotate(-28 192 162)" filter="url(#blurS)"/>
+      <circle cx="352" cy="142" r="10" fill="rgba(255,255,255,0.95)" filter="url(#blurS)"/>
+      <!-- rim -->
+      <circle cx="256" cy="256" r="150" fill="none" stroke="url(#rimL)" stroke-width="3"/>
+      <!-- ÷ mark：分帳 = 把錢除開 -->
+      <g fill="rgba(20,110,58,0.92)">
+        <rect x="178" y="242" width="156" height="28" rx="14"/>
+        <circle cx="256" cy="186" r="25"/>
+        <circle cx="256" cy="326" r="25"/>
+      </g>
+    </g>
+  </g>
+  <rect x="17.5" y="17.5" width="477" height="477" rx="106.5" fill="none" stroke="url(#sqRimL)" stroke-width="3"/>
+</svg>
+
+<!-- DARK VARIANT -->
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="sqD"><rect x="16" y="16" width="480" height="480" rx="108"/></clipPath>
+    <radialGradient id="bgD1" cx="0.12" cy="0.1" r="0.9">
+      <stop offset="0%" stop-color="hsla(222,50%,20%,0.95)"/><stop offset="100%" stop-color="hsla(222,50%,20%,0)"/>
+    </radialGradient>
+    <radialGradient id="bgD2" cx="0.92" cy="0.15" r="0.8">
+      <stop offset="0%" stop-color="hsla(158,45%,18%,0.85)"/><stop offset="100%" stop-color="hsla(158,45%,18%,0)"/>
+    </radialGradient>
+    <radialGradient id="bgD3" cx="0.5" cy="1.05" r="0.9">
+      <stop offset="0%" stop-color="hsla(252,45%,22%,0.8)"/><stop offset="100%" stop-color="hsla(252,45%,22%,0)"/>
+    </radialGradient>
+    <linearGradient id="coinFillD" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.32)"/><stop offset="55%" stop-color="rgba(255,255,255,0.08)"/><stop offset="100%" stop-color="rgba(255,255,255,0.16)"/>
+    </linearGradient>
+    <radialGradient id="coinGreenD" cx="0.5" cy="0.72" r="0.85">
+      <stop offset="0%" stop-color="rgba(48,209,88,0.34)"/><stop offset="75%" stop-color="rgba(48,209,88,0.08)"/><stop offset="100%" stop-color="rgba(48,209,88,0)"/>
+    </radialGradient>
+    <linearGradient id="rimD" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.8)"/><stop offset="50%" stop-color="rgba(255,255,255,0.18)"/><stop offset="100%" stop-color="rgba(255,255,255,0.5)"/>
+    </linearGradient>
+    <linearGradient id="specD" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.8)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+    <linearGradient id="sqRimD" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/><stop offset="100%" stop-color="rgba(255,255,255,0.08)"/>
+    </linearGradient>
+    <filter id="blurS2" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="blurM2" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="14"/></filter>
+  </defs>
+  <g clip-path="url(#sqD)">
+    <rect x="16" y="16" width="480" height="480" fill="#05060a"/>
+    <rect x="16" y="16" width="480" height="480" fill="url(#bgD1)"/>
+    <rect x="16" y="16" width="480" height="480" fill="url(#bgD2)"/>
+    <rect x="16" y="16" width="480" height="480" fill="url(#bgD3)"/>
+    <ellipse cx="256" cy="418" rx="140" ry="20" fill="rgba(0,0,0,0.6)" filter="url(#blurM2)"/>
+    <g>
+      <circle cx="256" cy="256" r="150" fill="url(#coinFillD)"/>
+      <circle cx="256" cy="256" r="150" fill="url(#coinGreenD)"/>
+      <path d="M168 372 C 214 396, 298 396, 344 372" stroke="rgba(110,230,160,0.7)" stroke-width="10" fill="none" filter="url(#blurS2)"/>
+      <ellipse cx="192" cy="162" rx="70" ry="26" fill="url(#specD)" transform="rotate(-28 192 162)" filter="url(#blurS2)"/>
+      <circle cx="352" cy="142" r="10" fill="rgba(255,255,255,0.8)" filter="url(#blurS2)"/>
+      <circle cx="256" cy="256" r="150" fill="none" stroke="url(#rimD)" stroke-width="3"/>
+      <g fill="rgba(120,235,170,0.95)">
+        <rect x="178" y="242" width="156" height="28" rx="14"/>
+        <circle cx="256" cy="186" r="25"/>
+        <circle cx="256" cy="326" r="25"/>
+      </g>
+    </g>
+  </g>
+  <rect x="17.5" y="17.5" width="477" height="477" rx="106.5" fill="none" stroke="url(#sqRimD)" stroke-width="3"/>
+</svg>
+</body>
+</html>
