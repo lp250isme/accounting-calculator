@@ -8,11 +8,11 @@
 
 /* ---------- design tokens ---------- */
 :root {
-    --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text",
-        "SF Pro Display", "Segoe UI", system-ui, Roboto, "Helvetica Neue",
-        Arial, sans-serif;
-    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
-        monospace;
+    --font-ui: "Geist", -apple-system, BlinkMacSystemFont, "PingFang TC",
+        "Microsoft JhengHei", "Segoe UI", system-ui, "Helvetica Neue", sans-serif;
+    --font-mono: "Geist Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo,
+        Consolas, monospace;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
     --label: #000000;
     --label-2: rgba(60, 60, 67, 0.6);
@@ -530,16 +530,66 @@ footer a:hover {
 @keyframes fade-in {
     from {
         opacity: 0;
-        transform: translateY(6px);
+        transform: translateY(8px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: none;
     }
 }
-/* 不用 fill/delay：動畫沒跑（背景分頁）時內容仍可見 */
 .animate-fade-in {
-    animation: fade-in 0.25s ease-out;
+    animation: fade-in 0.5s var(--ease-out) both;
+}
+
+/* ---------- 統一細修：hover/press、聚焦環、選取色（與 kvcc 生態系一致）---------- */
+a.glass-chip,
+a.glass,
+button.glass,
+.lg-works__card {
+    transition: transform 0.18s var(--ease-out),
+        box-shadow 0.24s var(--ease-out), background-color 0.15s ease;
+}
+.lg-works__arrow {
+    transition: transform 0.18s var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+    a.glass-chip:hover,
+    .lg-works__card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px -14px rgba(0, 0, 0, 0.45);
+    }
+    a.glass:hover,
+    button.glass:hover {
+        transform: translateY(-1px);
+    }
+    a.glass-chip:hover .lg-works__arrow,
+    .lg-works__card:hover .lg-works__arrow {
+        transform: translateX(3px);
+    }
+}
+a.glass-chip:active,
+.lg-works__card:active {
+    transform: translateY(-1px) scale(0.985);
+    transition-duration: 0.1s;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--bg),
+        0 0 0 4px color-mix(in srgb, var(--tint) 70%, transparent);
+}
+::selection {
+    background: color-mix(in srgb, var(--tint) 28%, transparent);
+}
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--tint);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -547,9 +597,19 @@ footer a:hover {
         animation: none;
     }
     .animate-fade-in {
-        animation: none;
+        animation-name: fade-in-opacity;
     }
-    * {
+    @keyframes fade-in-opacity {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    *,
+    *::before,
+    *::after {
         transition-duration: 0.01ms !important;
     }
 }
