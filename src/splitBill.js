@@ -30,30 +30,37 @@ export function deleteRecord(id) {
     return records;
 }
 
-/** 每人淨額 = 實際付出 − 應分擔。
+/** 每人小結：實際付出、應分擔、淨額（淨額 = 付出 − 應分擔）。
  *  付款人自己在分擔名單時，自己那份也算消費——這樣全體淨額和為 0，
  *  多人付款時的債權分配才會正確。
  *  （舊版把自己那份排除在欠款外、付款卻記全額，淨額被灌水：
  *    一人付全部時剛好不影響結果，多人付款時金額與分配都會算錯。） */
-function computeNet(participants, paymentRecords) {
-    const net = new Map(participants.map(p => [p, 0]));
+export function computePersonSummary(participants, paymentRecords) {
+    const paid = new Map(participants.map(p => [p, 0]));
+    const share = new Map(participants.map(p => [p, 0]));
     paymentRecords.forEach(r => {
         const amount = parseFloat(r.amount);
-        net.set(r.payer, (net.get(r.payer) || 0) + amount);
-        const share = amount / r.splitAmong.length;
+        paid.set(r.payer, (paid.get(r.payer) || 0) + amount);
+        const each = amount / r.splitAmong.length;
         r.splitAmong.forEach(person => {
-            net.set(person, (net.get(person) || 0) - share);
+            share.set(person, (share.get(person) || 0) + each);
         });
     });
-    return net;
+    return participants.map(p => {
+        const a = paid.get(p) || 0;
+        const b = share.get(p) || 0;
+        return { name: p, paid: a, share: b, net: Math.round((a - b) * 100) / 100 };
+    });
 }
 
 /** 貪婪結算：欠最多的優先還給墊最多的，把轉帳次數壓到最少。
  *  以「分」為單位做整數運算，避免浮點殘渣（如 100/3）產生 0.00 元的轉帳列；
  *  除不盡的尾分由墊最多的人吸收。 */
 export function calculateSettlement(participants, paymentRecords) {
-    const net = computeNet(participants, paymentRecords);
-    const cents = [...net.entries()].map(([p, n]) => [p, Math.round(n * 100)]);
+    const cents = computePersonSummary(participants, paymentRecords).map(s => [
+        s.name,
+        Math.round(s.net * 100),
+    ]);
     const debtors = cents.filter(([, n]) => n < 0).sort((a, b) => a[1] - b[1]);
     const creditors = cents.filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
 
@@ -75,6 +82,26 @@ export function calculateSettlement(participants, paymentRecords) {
         if (creditors[j][1] === 0) j++;
     }
     return settlements;
+}
+
+/** 結算結果組成可貼進群組的純文字（Web Share / 剪貼簿用） */
+export function buildShareText(title, paymentRecords, settlements) {
+    const n = v => Number(v.toFixed(2)).toLocaleString();
+    const total = paymentRecords.reduce((s, r) => s + parseFloat(r.amount), 0);
+    const lines = [
+        `📋 ${title || '分帳結果'}`,
+        `總支出 ${n(total)} 元・${paymentRecords.length} 筆付款`,
+        '',
+    ];
+    if (settlements.length === 0) {
+        lines.push('全部結清，沒有人需要轉帳 🎉');
+    } else {
+        settlements.forEach(s =>
+            lines.push(`${s.debtor} → ${s.creditor}：${n(s.amount)} 元`)
+        );
+    }
+    lines.push('', '— accounting.kvcc.me');
+    return lines.join('\n');
 }
 
 /** CSV 欄位跳脫：內含雙引號時依 RFC 4180 變成兩個 */

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LiquidGlass } from 'liquid-glass-kit';
 import { MoreByKv } from 'more-by-kv';
 import useTheme from './useTheme';
@@ -7,6 +7,8 @@ import {
     saveRecord,
     deleteRecord,
     calculateSettlement,
+    computePersonSummary,
+    buildShareText,
     downloadCsv,
 } from './splitBill';
 
@@ -74,7 +76,6 @@ export default function App() {
         participants: false,
         savedRecords: false,
     });
-    const [settlements, setSettlements] = useState(null);
     const [records, setRecords] = useState(() => loadRecords());
 
     // 表單
@@ -83,6 +84,15 @@ export default function App() {
     const [payer, setPayer] = useState('');
     const [amount, setAmount] = useState('');
     const [splitAmong, setSplitAmong] = useState(() => new Set());
+
+    // inline 回饋（取代 alert/confirm）
+    const [formError, setFormError] = useState('');
+    const [participantError, setParticipantError] = useState('');
+    const [confirmingId, setConfirmingId] = useState(null);
+    const [shared, setShared] = useState(false);
+    const participantErrTimer = useRef(null);
+    const confirmTimer = useRef(null);
+    const sharedTimer = useRef(null);
 
     const nameRef = useRef(null);
     const payTitleRef = useRef(null);
@@ -93,6 +103,31 @@ export default function App() {
         0
     );
     const canPay = participants.length > 1;
+
+    // 即時結算：付款一變動就算好，不用再按「計算」
+    const settlements = useMemo(
+        () =>
+            paymentRecords.length > 0
+                ? calculateSettlement(participants, paymentRecords)
+                : null,
+        [participants, paymentRecords]
+    );
+    const personSummary = useMemo(
+        () =>
+            paymentRecords.length > 0
+                ? computePersonSummary(participants, paymentRecords)
+                : null,
+        [participants, paymentRecords]
+    );
+
+    // 已儲存分帳：最近編輯在前
+    const sortedRecords = useMemo(
+        () =>
+            [...records].sort((a, b) =>
+                (b.timestamp || '').localeCompare(a.timestamp || '')
+            ),
+        [records]
+    );
 
     // 自動儲存：有標題 + id 的分帳，任何變動都即時寫回 localStorage（舊版同款行為）
     useEffect(() => {
@@ -122,12 +157,13 @@ export default function App() {
         setTitle('');
         setParticipants([]);
         setPaymentRecords([]);
-        setSettlements(null);
         setCollapsed({ participants: false, savedRecords: false });
         setPayTitle('');
         setPayer('');
         setAmount('');
         setSplitAmong(new Set());
+        setFormError('');
+        setParticipantError('');
     };
 
     /* ---------- 參與者 ---------- */
@@ -146,9 +182,15 @@ export default function App() {
                 r => r.payer === name || r.splitAmong.includes(name)
             )
         ) {
-            alert('此參與者已涉及付款紀錄，無法刪除');
+            setParticipantError(`「${name}」已有付款紀錄，無法移除`);
+            clearTimeout(participantErrTimer.current);
+            participantErrTimer.current = setTimeout(
+                () => setParticipantError(''),
+                3000
+            );
             return;
         }
+        setParticipantError('');
         setParticipants(ps => ps.filter(p => p !== name));
         setSplitAmong(s => {
             const next = new Set(s);
@@ -160,6 +202,7 @@ export default function App() {
 
     /* ---------- 付款 ---------- */
     const toggleSplitAmong = name => {
+        setFormError('');
         setSplitAmong(s => {
             const next = new Set(s);
             if (next.has(name)) next.delete(name);
@@ -169,15 +212,21 @@ export default function App() {
     };
 
     const addPayment = () => {
-        if (!canPay) {
-            alert('參與者不足，無法分帳，至少需要兩人');
-            return;
-        }
         const value = parseFloat(amount);
-        if (!payer || !amount || !(value > 0) || splitAmong.size === 0) {
-            alert('請選擇付款人、輸入金額並至少選擇一位分擔人');
+        if (!payer) {
+            setFormError('請選擇付款人');
             return;
         }
+        if (!amount || !(value > 0)) {
+            setFormError('請輸入大於 0 的金額');
+            amountRef.current?.focus();
+            return;
+        }
+        if (splitAmong.size === 0) {
+            setFormError('請至少選擇一位分擔人');
+            return;
+        }
+        setFormError('');
         setPaymentRecords(rs => [
             ...rs,
             {
@@ -187,7 +236,6 @@ export default function App() {
                 title: payTitle.trim(),
             },
         ]);
-        setSettlements(null);
         setPayTitle('');
         setAmount('');
         setPayer('');
@@ -195,21 +243,28 @@ export default function App() {
         payTitleRef.current?.focus();
     };
 
-    const removePayment = index => {
+    const removePayment = index =>
         setPaymentRecords(rs => rs.filter((_, i) => i !== index));
-        setSettlements(null);
+
+    /* ---------- 分享 / 匯出 ---------- */
+    const shareResult = async () => {
+        const text = buildShareText(title.trim(), paymentRecords, settlements);
+        if (navigator.share) {
+            try {
+                await navigator.share({ text });
+            } catch {
+                /* 使用者取消分享 */
+            }
+            return;
+        }
+        await navigator.clipboard.writeText(text);
+        setShared(true);
+        clearTimeout(sharedTimer.current);
+        sharedTimer.current = setTimeout(() => setShared(false), 1600);
     };
 
-    /* ---------- 結算 ---------- */
-    const calculate = () =>
-        setSettlements(calculateSettlement(participants, paymentRecords));
-
     const exportCsv = () =>
-        downloadCsv(
-            title.trim(),
-            paymentRecords,
-            calculateSettlement(participants, paymentRecords)
-        );
+        downloadCsv(title.trim(), paymentRecords, settlements);
 
     /* ---------- 已儲存分帳 ---------- */
     const loadOne = record => {
@@ -223,15 +278,24 @@ export default function App() {
                 savedRecords: false,
             }
         );
-        setSettlements(null);
         setPayTitle('');
         setPayer('');
         setAmount('');
         setSplitAmong(new Set(record.participants));
+        setFormError('');
+        setParticipantError('');
     };
 
+    // 兩段式刪除：第一下進入確認狀態（3 秒自動還原），第二下才真的刪
     const removeOne = record => {
-        if (!confirm(`確定要刪除分帳「${record.title}」嗎？`)) return;
+        if (confirmingId !== record.id) {
+            setConfirmingId(record.id);
+            clearTimeout(confirmTimer.current);
+            confirmTimer.current = setTimeout(() => setConfirmingId(null), 3000);
+            return;
+        }
+        clearTimeout(confirmTimer.current);
+        setConfirmingId(null);
         setRecords(deleteRecord(record.id));
         if (splitId === record.id) resetState();
     };
@@ -258,7 +322,7 @@ export default function App() {
             <section className="hero animate-fade-in">
                 <h1>分帳計算器</h1>
                 <p>
-                    旅行、聚餐的多人帳一次記清楚，一鍵算出「誰該給誰多少錢」，
+                    旅行、聚餐的多人帳一次記清楚，即時算出「誰該給誰多少錢」，
                     用最少的轉帳次數結清。資料只存在你的瀏覽器。
                 </p>
             </section>
@@ -347,6 +411,11 @@ export default function App() {
                                     ))}
                                 </div>
                             )}
+                            {participantError && (
+                                <p className="form-error" role="alert">
+                                    {participantError}
+                                </p>
+                            )}
                         </>
                     )}
                 </div>
@@ -379,6 +448,7 @@ export default function App() {
                                         className="field"
                                         value={payer}
                                         onChange={e => {
+                                            setFormError('');
                                             setPayer(e.target.value);
                                             if (e.target.value)
                                                 amountRef.current?.focus();
@@ -399,7 +469,10 @@ export default function App() {
                                         min="0"
                                         step="0.01"
                                         value={amount}
-                                        onChange={e => setAmount(e.target.value)}
+                                        onChange={e => {
+                                            setFormError('');
+                                            setAmount(e.target.value);
+                                        }}
                                         onKeyDown={e => {
                                             if (
                                                 e.key === 'Enter' &&
@@ -428,6 +501,11 @@ export default function App() {
                                     ))}
                                 </div>
                             </div>
+                            {formError && (
+                                <p className="form-error" role="alert">
+                                    {formError}
+                                </p>
+                            )}
                             <button className="primary-btn" onClick={addPayment}>
                                 新增付款
                             </button>
@@ -464,44 +542,80 @@ export default function App() {
                     )}
                 </div>
 
-                {/* 結算 */}
+                {/* 結算 — 付款一變動即時更新，免按計算 */}
                 <div className="glass-panel section-card animate-fade-in">
                     <div className="section-head static">
                         <span className="section-title">結算結果</span>
-                        <button
-                            className="glass-chip pill-btn"
-                            onClick={exportCsv}
-                            disabled={paymentRecords.length === 0}
-                        >
-                            匯出 CSV
-                        </button>
+                        <div className="head-actions">
+                            <button
+                                className={`glass-chip pill-btn share-btn ${
+                                    shared ? 'done' : ''
+                                }`}
+                                onClick={shareResult}
+                                disabled={!settlements}
+                            >
+                                {/* key 強制換 DOM 節點，避開 iOS WebKit 換字疊影 */}
+                                <span key={shared ? 'done' : 'share'}>
+                                    {shared ? '已複製 ✓' : '分享'}
+                                </span>
+                            </button>
+                            <button
+                                className="glass-chip pill-btn"
+                                onClick={exportCsv}
+                                disabled={!settlements}
+                            >
+                                CSV
+                            </button>
+                        </div>
                     </div>
-                    <button
-                        className="primary-btn"
-                        onClick={calculate}
-                        disabled={paymentRecords.length === 0}
-                    >
-                        計算結算
-                    </button>
-                    {settlements &&
-                        (settlements.length > 0 ? (
-                            <ul className="entries">
-                                {settlements.map((s, i) => (
-                                    <li key={i} className="entry settle">
-                                        <span className="settle-names">
-                                            <b>{s.debtor}</b>
-                                            <ArrowIcon />
-                                            <b>{s.creditor}</b>
+                    {!settlements ? (
+                        <p className="hint">新增付款後，這裡會即時算出結果</p>
+                    ) : (
+                        <>
+                            <ul className="person-summary">
+                                {personSummary.map(s => (
+                                    <li key={s.name}>
+                                        <span className="ps-name">{s.name}</span>
+                                        <span className="ps-detail">
+                                            付 {fmt(s.paid)} · 應分 {fmt(s.share)}
                                         </span>
-                                        <span className="settle-amount">
-                                            {fmt(s.amount)} 元
+                                        <span
+                                            className={`ps-net ${
+                                                s.net > 0
+                                                    ? 'pos'
+                                                    : s.net < 0
+                                                      ? 'neg'
+                                                      : ''
+                                            }`}
+                                        >
+                                            {s.net > 0 ? '+' : ''}
+                                            {fmt(s.net)}
                                         </span>
                                     </li>
                                 ))}
                             </ul>
-                        ) : (
-                            <p className="hint">全部結清，沒有人需要轉帳 🎉</p>
-                        ))}
+                            {settlements.length > 0 ? (
+                                <ul className="entries">
+                                    {settlements.map((s, i) => (
+                                        <li key={i} className="entry settle">
+                                            <span className="settle-names">
+                                                <b>{s.debtor}</b>
+                                                <ArrowIcon />
+                                                <b>{s.creditor}</b>
+                                            </span>
+                                            <span className="settle-amount">
+                                                {fmt(s.amount)} 元
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="hint">
+                                    全部結清，沒有人需要轉帳 🎉
+                                </p>
+                            )}
+                        </>
+                    )}
                 </div>
 
                 {/* 已儲存分帳 */}
@@ -533,7 +647,7 @@ export default function App() {
                                 </p>
                             ) : (
                                 <ul className="entries">
-                                    {records.map(r => (
+                                    {sortedRecords.map(r => (
                                         <li
                                             key={r.id}
                                             className={`entry record ${
@@ -553,16 +667,28 @@ export default function App() {
                                                     {r.paymentRecords.length} 筆付款
                                                 </span>
                                             </div>
-                                            <button
-                                                className="x-btn"
-                                                onClick={e => {
-                                                    e.stopPropagation();
-                                                    removeOne(r);
-                                                }}
-                                                aria-label={`刪除 ${r.title}`}
-                                            >
-                                                <XIcon />
-                                            </button>
+                                            {confirmingId === r.id ? (
+                                                <button
+                                                    className="confirm-del"
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        removeOne(r);
+                                                    }}
+                                                >
+                                                    刪除？
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="x-btn"
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        removeOne(r);
+                                                    }}
+                                                    aria-label={`刪除 ${r.title}`}
+                                                >
+                                                    <XIcon />
+                                                </button>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>

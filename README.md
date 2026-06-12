@@ -13,8 +13,10 @@ A bill-splitting calculator for trips and group dinners. Record who paid what an
 ### ✨ Features
 
 - **Per-expense split**: Each payment can be shared by any subset of participants — tap the chips to toggle who's in.
-- **Min-transfer settlement**: One tap computes exactly who pays whom, with the minimum number of transfers.
-- **Multiple saved splits**: Every split (e.g. a trip) is auto-saved to `localStorage` as you type — switch between them anytime. Data never leaves your browser.
+- **Live min-transfer settlement**: Results update instantly as you add payments — exactly who pays whom, with the minimum number of transfers. No "calculate" button needed.
+- **Per-person summary**: See at a glance how much each person paid, owes, and their net balance.
+- **Share as text**: One tap turns the settlement into group-chat-ready text — native share sheet on mobile, clipboard on desktop.
+- **Multiple saved splits**: Every split (e.g. a trip) is auto-saved to `localStorage` as you type — switch between them anytime (most recently edited first). Data never leaves your browser.
 - **CSV export**: Download payment records + settlement results as UTF-8 CSV (with BOM, opens cleanly in Excel).
 - **Liquid Glass UI**: Apple-style refractive glass (SVG `feDisplacementMap`, after [jh3y's technique](https://codepen.io/jh3y/pen/EajLxJV)) on Chromium, frosted-blur fallback on Safari/Firefox.
 - **Light / Dark / Auto Theme**: Follows the system by default; manual override is remembered in `localStorage`.
@@ -36,13 +38,15 @@ A bill-splitting calculator for trips and group dinners. Record who paid what an
 
 ## 繁體中文
 
-旅行、聚餐的分帳計算器。記錄每筆「誰付的、誰要分」，一鍵算出「誰該給誰多少錢」——貪婪演算法讓欠最多的優先還給墊最多的，**把轉帳次數壓到最少**。
+旅行、聚餐的分帳計算器。記錄每筆「誰付的、誰要分」，即時算出「誰該給誰多少錢」——貪婪演算法讓欠最多的優先還給墊最多的，**把轉帳次數壓到最少**。
 
 ### ✨ 功能
 
 - **逐筆指定分擔人**：每筆付款都能用 chips 點選由哪些人分擔。
-- **最少轉帳結算**：一鍵算出確切的轉帳清單，次數最少。
-- **多筆分帳儲存**：每個分帳（例如一趟旅行）邊打邊自動存進 `localStorage`，隨時切換。資料不離開你的瀏覽器。
+- **即時最少轉帳結算**：付款一輸入結果就自動更新——誰該給誰多少錢、次數最少，不用按「計算」。
+- **個人小結**：每人付了多少、應分多少、淨額一目了然。
+- **結果一鍵分享**：結算組成可直接貼進群組的文字——手機走系統分享、桌機複製到剪貼簿。
+- **多筆分帳儲存**：每個分帳（例如一趟旅行）邊打邊自動存進 `localStorage`，隨時切換（最近編輯的排前面）。資料不離開你的瀏覽器。
 - **CSV 匯出**：付款紀錄 + 結算結果下載成 UTF-8 CSV（含 BOM，Excel 直接開不亂碼）。
 - **Liquid Glass UI**：Apple 風折射玻璃（SVG `feDisplacementMap` 位移貼圖，採用 [jh3y 的技法](https://codepen.io/jh3y/pen/EajLxJV)），Chromium 限定，Safari/Firefox 自動退回霜化模糊玻璃。
 - **淺色 / 深色 / 自動主題**：預設跟隨系統，手動切換會記在 `localStorage`。
