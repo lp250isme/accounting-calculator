@@ -1,4 +1,6 @@
-# accounting-calculator — Split 分帳計算器
+<p align="center">
+  <img src="public/icon-dark.png" alt="accounting-calculator" width="120" height="120">
+</p># accounting-calculator — Split 分帳計算器
 
 [English](#english) | [繁體中文](#繁體中文)
 
