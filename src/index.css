@@ -416,6 +416,94 @@ input[type="number"].field {
     margin-top: 8px;
 }
 
+/* 付款人 chip 列（單選） */
+.pick-row {
+    display: flex;
+    flex-direction: column;
+}
+.pick-row .people {
+    margin-top: 8px;
+}
+
+/* 金額常用面額快捷 */
+.amount-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.preset-btn {
+    border: none;
+    border-radius: 9999px;
+    min-height: 34px;
+    padding: 0 14px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--label-2);
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.preset-btn:active {
+    transform: scale(0.96);
+}
+
+/* 分擔人標頭：標籤 + 全選/清空 */
+.split-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.link-btn {
+    border: none;
+    background: none;
+    padding: 4px 0;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tint);
+    cursor: pointer;
+}
+.link-btn:active {
+    opacity: 0.6;
+}
+
+/* 每人分擔即時預覽 */
+.per-head {
+    margin: 12px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--label-2);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 表單動作列（編輯時多一顆取消） */
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+}
+.form-actions .primary-btn {
+    flex: 1;
+    margin-top: 0;
+}
+.cancel-edit {
+    flex-shrink: 0;
+    background: var(--fill);
+    color: var(--label-2);
+}
+
+/* 付款列可點編輯 */
+.entry.editable {
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+.entry.editing {
+    box-shadow: inset 0 0 0 1.5px
+        color-mix(in srgb, var(--tint) 55%, transparent);
+}
+
 /* ---------- 清單項 ---------- */
 .entries {
     list-style: none;

@@ -84,6 +84,7 @@ export default function App() {
     const [payer, setPayer] = useState('');
     const [amount, setAmount] = useState('');
     const [splitAmong, setSplitAmong] = useState(() => new Set());
+    const [editingIndex, setEditingIndex] = useState(null); // 正在編輯第幾筆付款
 
     // inline 回饋（取代 alert/confirm）
     const [formError, setFormError] = useState('');
@@ -103,6 +104,13 @@ export default function App() {
         0
     );
     const canPay = participants.length > 1;
+
+    // 金額即時預覽：每人分擔
+    const amountValue = parseFloat(amount);
+    const perHead =
+        amountValue > 0 && splitAmong.size > 0
+            ? amountValue / splitAmong.size
+            : null;
 
     // 即時結算：付款一變動就算好，不用再按「計算」
     const settlements = useMemo(
@@ -162,18 +170,29 @@ export default function App() {
         setPayer('');
         setAmount('');
         setSplitAmong(new Set());
+        setEditingIndex(null);
         setFormError('');
         setParticipantError('');
     };
 
     /* ---------- 參與者 ---------- */
     const addParticipant = () => {
-        const name = nameInput.trim();
+        // 支援一次貼多位：空白 / 逗號 / 頓號分隔
+        const names = nameInput
+            .split(/[,，、\s]+/)
+            .map(n => n.trim())
+            .filter(Boolean);
         setNameInput('');
         nameRef.current?.focus();
-        if (!name || participants.includes(name)) return;
-        setParticipants(ps => [...ps, name]);
-        setSplitAmong(s => new Set([...s, name])); // 新成員預設加入分擔
+        if (names.length === 0) return;
+        setParticipants(ps => {
+            const next = [...ps];
+            names.forEach(n => {
+                if (!next.includes(n)) next.push(n);
+            });
+            return next;
+        });
+        setSplitAmong(s => new Set([...s, ...names])); // 新成員預設加入分擔
     };
 
     const removeParticipant = name => {
@@ -211,7 +230,43 @@ export default function App() {
         });
     };
 
-    const addPayment = () => {
+    // 付款人單選 chip：再點一次可取消
+    const choosePayer = name => {
+        setFormError('');
+        if (payer === name) {
+            setPayer('');
+            return;
+        }
+        setPayer(name);
+        amountRef.current?.focus();
+    };
+
+    // 分擔人「全選 / 清空」
+    const allSplitSelected =
+        participants.length > 0 && splitAmong.size === participants.length;
+    const toggleAllSplit = () => {
+        setFormError('');
+        setSplitAmong(allSplitSelected ? new Set() : new Set(participants));
+    };
+
+    // 金額快捷：累加常用面額
+    const addAmount = delta => {
+        setFormError('');
+        setAmount(a =>
+            String(Math.round(((parseFloat(a) || 0) + delta) * 100) / 100)
+        );
+        amountRef.current?.focus();
+    };
+
+    const resetPayForm = () => {
+        setPayTitle('');
+        setAmount('');
+        setPayer('');
+        setSplitAmong(new Set(participants)); // 回到預設全選
+        setEditingIndex(null);
+    };
+
+    const submitPayment = () => {
         const value = parseFloat(amount);
         if (!payer) {
             setFormError('請選擇付款人');
@@ -227,24 +282,39 @@ export default function App() {
             return;
         }
         setFormError('');
-        setPaymentRecords(rs => [
-            ...rs,
-            {
-                payer,
-                amount: value,
-                splitAmong: participants.filter(p => splitAmong.has(p)),
-                title: payTitle.trim(),
-            },
-        ]);
-        setPayTitle('');
-        setAmount('');
-        setPayer('');
-        setSplitAmong(new Set(participants)); // 回到預設全選
+        const rec = {
+            payer,
+            amount: value,
+            splitAmong: participants.filter(p => splitAmong.has(p)),
+            title: payTitle.trim(),
+        };
+        setPaymentRecords(rs =>
+            editingIndex !== null
+                ? rs.map((r, i) => (i === editingIndex ? rec : r))
+                : [...rs, rec]
+        );
+        resetPayForm();
         payTitleRef.current?.focus();
     };
 
-    const removePayment = index =>
+    // 點既有付款列 → 載回表單編輯
+    const editPayment = (r, index) => {
+        setEditingIndex(index);
+        setPayTitle(r.title || '');
+        setPayer(r.payer);
+        setAmount(String(r.amount));
+        setSplitAmong(new Set(r.splitAmong));
+        setFormError('');
+        payTitleRef.current?.focus();
+    };
+
+    const removePayment = index => {
         setPaymentRecords(rs => rs.filter((_, i) => i !== index));
+        // 維持編輯指標：刪到自己→收掉表單；刪到前面→指標往前移
+        if (editingIndex === index) resetPayForm();
+        else if (editingIndex !== null && index < editingIndex)
+            setEditingIndex(editingIndex - 1);
+    };
 
     /* ---------- 分享 / 匯出 ---------- */
     const shareResult = async () => {
@@ -282,6 +352,7 @@ export default function App() {
         setPayer('');
         setAmount('');
         setSplitAmong(new Set(record.participants));
+        setEditingIndex(null);
         setFormError('');
         setParticipantError('');
     };
@@ -443,49 +514,68 @@ export default function App() {
                                     placeholder="項目（選填），例如：晚餐"
                                     autoComplete="off"
                                 />
-                                <div className="field-row">
-                                    <select
-                                        className="field"
-                                        value={payer}
-                                        onChange={e => {
-                                            setFormError('');
-                                            setPayer(e.target.value);
-                                            if (e.target.value)
-                                                amountRef.current?.focus();
-                                        }}
-                                    >
-                                        <option value="">選擇付款人</option>
+                                {/* 付款人：單選 chip（取代 native 下拉，跟分擔人一致） */}
+                                <div className="pick-row">
+                                    <span className="split-label">付款人</span>
+                                    <div className="people">
                                         {participants.map(p => (
-                                            <option key={p} value={p}>
+                                            <button
+                                                key={p}
+                                                className={`glass-chip person-toggle ${
+                                                    payer === p ? 'on' : ''
+                                                }`}
+                                                onClick={() => choosePayer(p)}
+                                                aria-pressed={payer === p}
+                                            >
                                                 {p}
-                                            </option>
+                                            </button>
                                         ))}
-                                    </select>
-                                    <input
-                                        ref={amountRef}
-                                        className="field"
-                                        type="number"
-                                        inputMode="decimal"
-                                        min="0"
-                                        step="0.01"
-                                        value={amount}
-                                        onChange={e => {
-                                            setFormError('');
-                                            setAmount(e.target.value);
-                                        }}
-                                        onKeyDown={e => {
-                                            if (
-                                                e.key === 'Enter' &&
-                                                !e.nativeEvent.isComposing
-                                            )
-                                                addPayment();
-                                        }}
-                                        placeholder="金額"
-                                    />
+                                    </div>
+                                </div>
+                                {/* 金額 + 常用面額快捷 */}
+                                <input
+                                    ref={amountRef}
+                                    className="field"
+                                    type="number"
+                                    inputMode="decimal"
+                                    min="0"
+                                    step="0.01"
+                                    value={amount}
+                                    onChange={e => {
+                                        setFormError('');
+                                        setAmount(e.target.value);
+                                    }}
+                                    onKeyDown={e => {
+                                        if (
+                                            e.key === 'Enter' &&
+                                            !e.nativeEvent.isComposing
+                                        )
+                                            submitPayment();
+                                    }}
+                                    placeholder="金額"
+                                />
+                                <div className="amount-presets">
+                                    {[100, 500, 1000].map(d => (
+                                        <button
+                                            key={d}
+                                            className="glass-chip preset-btn"
+                                            onClick={() => addAmount(d)}
+                                        >
+                                            +{d}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                             <div className="split-among">
-                                <span className="split-label">分擔人</span>
+                                <div className="split-head">
+                                    <span className="split-label">分擔人</span>
+                                    <button
+                                        className="link-btn"
+                                        onClick={toggleAllSplit}
+                                    >
+                                        {allSplitSelected ? '清空' : '全選'}
+                                    </button>
+                                </div>
                                 <div className="people">
                                     {participants.map(p => (
                                         <button
@@ -500,21 +590,53 @@ export default function App() {
                                         </button>
                                     ))}
                                 </div>
+                                {perHead !== null && (
+                                    <p className="per-head">
+                                        每人 {fmt(perHead)} 元 · {splitAmong.size}
+                                        {' '}
+                                        人分
+                                    </p>
+                                )}
                             </div>
                             {formError && (
                                 <p className="form-error" role="alert">
                                     {formError}
                                 </p>
                             )}
-                            <button className="primary-btn" onClick={addPayment}>
-                                新增付款
-                            </button>
+                            <div className="form-actions">
+                                {editingIndex !== null && (
+                                    <button
+                                        className="pill-btn cancel-edit"
+                                        onClick={resetPayForm}
+                                    >
+                                        取消
+                                    </button>
+                                )}
+                                <button
+                                    className="primary-btn"
+                                    onClick={submitPayment}
+                                >
+                                    <span
+                                        key={editingIndex !== null ? 'upd' : 'add'}
+                                    >
+                                        {editingIndex !== null
+                                            ? '更新付款'
+                                            : '新增付款'}
+                                    </span>
+                                </button>
+                            </div>
                         </>
                     )}
                     {paymentRecords.length > 0 && (
                         <ul className="entries">
                             {paymentRecords.map((r, i) => (
-                                <li key={i} className="entry">
+                                <li
+                                    key={i}
+                                    className={`entry editable ${
+                                        editingIndex === i ? 'editing' : ''
+                                    }`}
+                                    onClick={() => editPayment(r, i)}
+                                >
                                     <div className="entry-text">
                                         <span>
                                             {r.title && (
@@ -531,7 +653,10 @@ export default function App() {
                                     </div>
                                     <button
                                         className="x-btn"
-                                        onClick={() => removePayment(i)}
+                                        onClick={e => {
+                                            e.stopPropagation();
+                                            removePayment(i);
+                                        }}
                                         aria-label="刪除付款"
                                     >
                                         <XIcon />
