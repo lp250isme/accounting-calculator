@@ -638,6 +638,7 @@ input[type="number"].field {
 
 /* 刪除小圓鈕 */
 .x-btn {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -660,6 +661,17 @@ input[type="number"].field {
 .x-btn svg {
     width: 12px;
     height: 12px;
+}
+/* 視覺維持 26px，熱區用透明 pseudo 撐到 44×44（Apple HIG 最小觸控尺寸）。
+   chip 列 gap 8px、entry 右側有 padding，撐開後不會壓到隔壁的熱區。 */
+.x-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
 }
 
 /* 兩段式刪除確認態（第一下 x 變這顆，3 秒自動還原） */
