@@ -375,15 +375,28 @@ export default function App() {
         if (navigator.share) {
             try {
                 await navigator.share({ text });
-            } catch {
-                /* 使用者取消分享 */
+                return;
+            } catch (err) {
+                if (err?.name === 'AbortError') return; // 使用者自己取消分享
+                /* 分享失敗（權限／不支援 text）→ 往下退回複製 */
             }
-            return;
         }
-        await navigator.clipboard.writeText(text);
-        setShared(true);
-        clearTimeout(sharedTimer.current);
-        sharedTimer.current = setTimeout(() => setShared(false), 1600);
+        // 剪貼簿會失敗：非 HTTPS、權限被拒、iOS 非使用者手勢等，失敗要看得見
+        try {
+            if (!navigator.clipboard?.writeText) throw new Error('no clipboard');
+            await navigator.clipboard.writeText(text);
+            setShared(true);
+            clearTimeout(sharedTimer.current);
+            sharedTimer.current = setTimeout(() => setShared(false), 1600);
+        } catch {
+            showToast(
+                {
+                    tone: 'error',
+                    message: '複製失敗，請手動選取結算結果，或改用 CSV 匯出',
+                },
+                4000
+            );
+        }
     };
 
     const exportCsv = () =>
