@@ -30,6 +30,42 @@ export function deleteRecord(id) {
     return records;
 }
 
+/* ---------- 付款列的刪除／復原（undo toast 用的純函式） ---------- */
+
+/** 刪掉第 index 筆付款。回傳新陣列與被刪掉的那筆（供復原用）；
+ *  index 不在範圍內時原陣列不動、removed 為 null。 */
+export function removePaymentAt(paymentRecords, index) {
+    if (!Number.isInteger(index) || index < 0 || index >= paymentRecords.length)
+        return { records: paymentRecords, removed: null };
+    return {
+        records: paymentRecords.filter((_, i) => i !== index),
+        removed: paymentRecords[index],
+    };
+}
+
+/** 把復原的付款塞回原本的位置（位置超出範圍就夾到頭／尾，順序不會亂跳）。 */
+export function insertPaymentAt(paymentRecords, index, record) {
+    const at = Math.max(0, Math.min(index, paymentRecords.length));
+    const next = [...paymentRecords];
+    next.splice(at, 0, record);
+    return next;
+}
+
+/** 刪除後編輯指標怎麼動：
+ *  沒在編輯或刪到正在編輯的那筆 → null（後者由呼叫端收掉表單）；
+ *  刪到編輯列前面 → 往前移一格；刪到後面 → 不動。 */
+export function editingIndexAfterRemove(editingIndex, index) {
+    if (editingIndex === null) return null;
+    if (editingIndex === index) return null;
+    return index < editingIndex ? editingIndex - 1 : editingIndex;
+}
+
+/** 復原後編輯指標怎麼動：放回的位置在編輯列之前（含同一格）→ 往後移一格。 */
+export function editingIndexAfterRestore(editingIndex, index) {
+    if (editingIndex === null) return null;
+    return index <= editingIndex ? editingIndex + 1 : editingIndex;
+}
+
 /** 每人小結：實際付出、應分擔、淨額（淨額 = 付出 − 應分擔）。
  *  付款人自己在分擔名單時，自己那份也算消費——這樣全體淨額和為 0，
  *  多人付款時的債權分配才會正確。

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LiquidGlass } from 'liquid-glass-kit';
 import { MoreByKv } from 'more-by-kv';
 import useTheme from './useTheme';
@@ -10,6 +10,10 @@ import {
     computePersonSummary,
     buildShareText,
     downloadCsv,
+    removePaymentAt,
+    insertPaymentAt,
+    editingIndexAfterRemove,
+    editingIndexAfterRestore,
 } from './splitBill';
 
 const fmt = n => Number(parseFloat(n).toFixed(2)).toLocaleString();
@@ -55,6 +59,15 @@ function XIcon() {
     );
 }
 
+function UndoIcon() {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+        </svg>
+    );
+}
+
 function ArrowIcon() {
     return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -94,6 +107,30 @@ export default function App() {
     const participantErrTimer = useRef(null);
     const confirmTimer = useRef(null);
     const sharedTimer = useRef(null);
+
+    // toast：刪除後的「復原」與操作失敗回饋，同時只留一則
+    const [toast, setToast] = useState(null);
+    const toastTimer = useRef(null);
+    const showToast = useCallback((next, ms) => {
+        clearTimeout(toastTimer.current);
+        setToast({ id: Date.now(), ...next });
+        toastTimer.current = setTimeout(() => setToast(null), ms);
+    }, []);
+    const dismissToast = useCallback(() => {
+        clearTimeout(toastTimer.current);
+        setToast(null);
+    }, []);
+
+    // 離開頁面時把計時器收乾淨
+    useEffect(
+        () => () => {
+            clearTimeout(participantErrTimer.current);
+            clearTimeout(confirmTimer.current);
+            clearTimeout(sharedTimer.current);
+            clearTimeout(toastTimer.current);
+        },
+        []
+    );
 
     const nameRef = useRef(null);
     const payTitleRef = useRef(null);
@@ -308,12 +345,28 @@ export default function App() {
         payTitleRef.current?.focus();
     };
 
+    // 刪除不彈確認，改成可復原：刪完給一則帶「復原」的 toast，6 秒後消失
     const removePayment = index => {
-        setPaymentRecords(rs => rs.filter((_, i) => i !== index));
+        const { records, removed } = removePaymentAt(paymentRecords, index);
+        if (!removed) return;
+        setPaymentRecords(records);
         // 維持編輯指標：刪到自己→收掉表單；刪到前面→指標往前移
         if (editingIndex === index) resetPayForm();
-        else if (editingIndex !== null && index < editingIndex)
-            setEditingIndex(editingIndex - 1);
+        else setEditingIndex(editingIndexAfterRemove(editingIndex, index));
+        const label =
+            removed.title?.trim() ||
+            `${removed.payer} 付的 ${fmt(removed.amount)} 元`;
+        showToast(
+            {
+                message: `已刪除「${label}」`,
+                actionLabel: '復原',
+                onAction: () => {
+                    setPaymentRecords(rs => insertPaymentAt(rs, index, removed));
+                    setEditingIndex(ei => editingIndexAfterRestore(ei, index));
+                },
+            },
+            6000
+        );
     };
 
     /* ---------- 分享 / 匯出 ---------- */
@@ -844,6 +897,33 @@ export default function App() {
                     Split {typeof __GIT_SHA__ !== 'undefined' ? __GIT_SHA__ : 'dev'}
                 </div>
             </footer>
+
+            {/* toast：刪除後的復原、操作失敗回饋。
+                aria-live="polite" 不搶焦點，螢幕閱讀器仍會唸到。 */}
+            <div className="toast-layer" role="status" aria-live="polite">
+                {toast && (
+                    <div
+                        key={toast.id}
+                        className={`glass-panel toast ${
+                            toast.tone === 'error' ? 'toast-error' : ''
+                        }`}
+                    >
+                        <span className="toast-msg">{toast.message}</span>
+                        {toast.actionLabel && (
+                            <button
+                                className="toast-action"
+                                onClick={() => {
+                                    toast.onAction?.();
+                                    dismissToast();
+                                }}
+                            >
+                                <UndoIcon />
+                                {toast.actionLabel}
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
         </main>
     );
 }
